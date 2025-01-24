@@ -6,11 +6,9 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     tools:context=".UI.Fragments.NoteFragment">
 
-
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="10dp"
         android:fillViewport="true"
         android:background="@color/white">
         <LinearLayout
@@ -33,23 +31,24 @@
                 android:textColor="@color/black"
                 android:textColorHint="@color/black"
                 />
+
             <EditText
                 android:id="@+id/noteBody"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:hint="Write Something"
-                android:inputType="textMultiLine"
-                android:importantForAutofill="no"
-                android:gravity="top|start"
-                android:overScrollMode="ifContentScrolls"
-                android:scrollbars="vertical"
-                android:minHeight="200dp"
-                android:padding="8dp"
-                android:textSize="16sp"
                 android:background="@android:color/transparent"
+                android:gravity="top|start"
+                android:hint="Write Something"
+                android:importantForAutofill="no"
+                android:inputType="textMultiLine"
+                android:minHeight="200dp"
+                android:overScrollMode="ifContentScrolls"
+                android:padding="8dp"
+                android:scrollbars="vertical"
                 android:textColor="@color/black"
                 android:textColorHint="@color/black"
-                />
+                android:textSize="16sp" />
         </LinearLayout>
     </ScrollView>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

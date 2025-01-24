@@ -6,6 +6,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import androidx.annotation.NonNull;
+import androidx.lifecycle.MutableLiveData;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.notesapp.R;
@@ -18,39 +19,55 @@ import java.util.List;
 
 public class NotesListAdapter extends RecyclerView.Adapter<NotesListAdapter.ViewHolder> {
 
-    private List<NoteUiState> notes ;
-
-    public NotesListAdapter(List<NoteUiState> notes) {
+    private MutableLiveData<List<NoteUiState>> notes ;
+    private NoteItemListener noteItemListener;
+    public NotesListAdapter(MutableLiveData<List<NoteUiState>> notes,NoteItemListener longClickedListener) {
+        this.noteItemListener=longClickedListener;
         this.notes = notes;
     }
-
 
     @NonNull
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.note_list_item,parent,false);
-        return new ViewHolder(view);
+        return new ViewHolder(view,noteItemListener);
     }
 
     @Override
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
-        holder.getTitle().setText(notes.get(position).getTitle());
-        String fullbody =notes.get(position).getBody();
-        holder.getBody().setText(fullbody.length()>20 ? fullbody.substring(0,20): fullbody);
+        holder.getTitle().setText(notes.getValue().get(position).getTitle());
+        String fullbody =notes.getValue().get(position).getBody();
+        holder.getBody().setText(fullbody.length()>50 ? fullbody.substring(0,50): fullbody);
     }
 
     @Override
     public int getItemCount() {
-        return notes.size();
+        return notes.getValue().size();
     }
 
-    public static class ViewHolder extends RecyclerView.ViewHolder{
+    public  class ViewHolder extends RecyclerView.ViewHolder{
         private final TextView title;
         private final TextView body;
-        public ViewHolder(View view){
+        public ViewHolder(View view,NoteItemListener listener){
             super(view);
             title = (TextView) view.findViewById(R.id.item_title);
             body = (TextView) view.findViewById(R.id.item_body);
+            view.setOnLongClickListener(e->{
+                int position = getAdapterPosition();
+                if(position != RecyclerView.NO_POSITION){
+                    listener.onItemLongClick(notes.getValue().get(position).getId());
+                    notifyDataSetChanged();
+                }
+                return  true;
+            });
+            view.setOnClickListener(e->{
+                int postion = getAdapterPosition();
+                if(postion != RecyclerView.NO_POSITION){
+                    NoteUiState note = notes.getValue().get(postion);
+                    listener.onItemClick(note.getId(), note.getTitle(),note.getBody());
+                }
+            });
+
         }
 
         public TextView getTitle() {
@@ -61,6 +78,11 @@ public class NotesListAdapter extends RecyclerView.Adapter<NotesListAdapter.View
             return body;
         }
 
+    }
+
+    public interface NoteItemListener {
+        void onItemLongClick(int id);
+        void onItemClick(int id,String tittle,String body);
     }
 
 }

@@ -9,6 +9,7 @@ import com.example.notesapp.data.Result;
 import com.example.notesapp.data.apis.NotesApi;
 import com.example.notesapp.data.models.ApplicationData;
 import com.example.notesapp.data.models.Note; // note that is required by the ui layer
+import com.example.notesapp.data.models.User;
 import com.example.notesapp.data.repositaries.states.SyncState;
 import com.example.notesapp.data.sources.ApplicationLocalDataSource;
 import com.example.notesapp.data.sources.NotesLocalDataSource;
@@ -16,6 +17,7 @@ import com.example.notesapp.data.sources.NotesRemoteDataSource;
 import com.example.notesapp.data.sources.UserLocalDataSource;
 
 import java.io.IOException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,8 +34,9 @@ public class NotesRepositary {
     //volatile for ensuring visibility when using multiple threads if needed
     private static  volatile NotesRepositary instance;
     private NotesLocalDataSource notesLocalDataSource;
-    private NotesRemoteDataSource remoteNotesDataSource;
 
+    private UserLocalDataSource userLocalDataSource=new UserLocalDataSource();
+    private NotesRemoteDataSource remoteNotesDataSource;
     private ApplicationLocalDataSource applicationLocalDataSource;
 
 
@@ -58,6 +61,15 @@ public class NotesRepositary {
 
     public void sync(NotesSyncCallback callback){
         //sync the remote datasore data with localdatastore
+        if(applicationLocalDataSource.getData() instanceof Result.Success){
+            ApplicationData applicationData =((Result.Success<ApplicationData>) applicationLocalDataSource.getData()).getData();
+            if(applicationData.isSynced()){
+                //no sync required
+                Log.d("syncStatus", "sync: Already synced");
+                callback.onSuccess(new SyncState("already synced"));
+                return;
+            }
+        }
         this.remoteNotesDataSource.fetchNotes(new NotesApi.NotesApiCallback() {
             @Override
             public void onSuccess(Result<List<com.example.notesapp.data.apis.models.Note>> result) {
@@ -65,17 +77,22 @@ public class NotesRepositary {
                 int failedCount = 0;
                 //todo - do something with the failed and success counts
                 if(result instanceof Result.Success){
+                    User user = userLocalDataSource.getUser();
                     for (com.example.notesapp.data.apis.models.Note note:((Result.Success<List<com.example.notesapp.data.apis.models.Note>>) result).getData()
                     ) {
-                        Log.d("debug", "onSuccess: "+note.getTitle());
-                        Result dbResult =  notesLocalDataSource.insert(new com.example.notesapp.data.DB.entities.Note(note.getTitle(),note.getBody()));
-                        if(dbResult instanceof Result.Success){
-                            sucesscCount++;
-                        }else{
-                            failedCount++;
-                            Log.d("database op failed", "on failure: "+((Result.Error)dbResult).getError());
+                        if(user != null && user.getUserId()==note.getUserId()){
+                            Log.d("debug", "onSuccess: "+note.getTitle());
+                            Result dbResult =  notesLocalDataSource.insert(new com.example.notesapp.data.DB.entities.Note(note.getTitle(),note.getBody()));
+                            if(dbResult instanceof Result.Success){
+                                sucesscCount++;
+                            }else{
+                                failedCount++;
+                                Log.d("database op failed", "on failure: "+((Result.Error)dbResult).getError());
+                            }
                         }
                     }
+                    Log.d("count", "onSuccess: sc"+sucesscCount + "  fc"+ failedCount);
+                    applicationLocalDataSource.store(new ApplicationData(true, LocalDateTime.now(),user.getUserId()));
                     callback.onSuccess(new SyncState("synced successfully sc"+sucesscCount + "  fc"+ failedCount));
                 }else{
                     callback.onFailure(new SyncState("failed :remote data source failed"));
@@ -119,6 +136,10 @@ public class NotesRepositary {
 
     public Result<Boolean> delete(int id){
         return notesLocalDataSource.delete(new com.example.notesapp.data.DB.entities.Note(id,"",""));
+    }
+
+    public Result<Boolean> update(String tittle,String body,int id){
+        return notesLocalDataSource.update(new com.example.notesapp.data.DB.entities.Note(id,tittle,body));
     }
 
     public interface NotesSyncCallback{

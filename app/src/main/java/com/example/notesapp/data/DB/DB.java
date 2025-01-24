@@ -3,7 +3,10 @@ package com.example.notesapp.data.DB;
 import android.app.Application;
 import android.content.Context;
 
+import androidx.annotation.NonNull;
 import androidx.room.Room;
+import androidx.room.migration.Migration;
+import androidx.sqlite.db.SupportSQLiteDatabase;
 
 public class DB extends Application {
     private static AppDatabase db;
@@ -13,7 +16,8 @@ public class DB extends Application {
         super.onCreate();
         db=Room
                 .databaseBuilder(this.getApplicationContext(),AppDatabase.class,"notes-db")
-                .allowMainThreadQueries() //this is not good i am aware of it (need to use another mechanism)
+                .fallbackToDestructiveMigration()
+                .allowMainThreadQueries() //thi (need to use another mechanism)
                 .build();
     }
 

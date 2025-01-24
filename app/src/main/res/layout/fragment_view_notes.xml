@@ -9,6 +9,7 @@
     <!-- TODO: Update blank fragment layout -->
 
     <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/notes_recycler_view"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="10dp"
@@ -20,4 +21,5 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintBottom_toBottomOf="parent"
         tools:listitem="@layout/note_list_item" />
+
 </androidx.constraintlayout.widget.ConstraintLayout>

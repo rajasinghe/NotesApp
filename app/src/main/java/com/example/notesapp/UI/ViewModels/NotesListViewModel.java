@@ -8,13 +8,19 @@ import com.example.notesapp.data.Result;
 import com.example.notesapp.data.models.Note;
 import com.example.notesapp.data.repositaries.NotesRepositary;
 
+import java.time.format.ResolverStyle;
 import java.util.ArrayList;
 import java.util.List;
 
 public class NotesListViewModel extends ViewModel {
     private NotesRepositary notesRepositary;
 
-    MutableLiveData<List<NoteUiState>> notesUiState = new MutableLiveData(new ArrayList<NoteUiState>());
+    private MutableLiveData<List<NoteUiState>> notesUiState = new MutableLiveData(new ArrayList<NoteUiState>());
+
+    private MutableLiveData<NoteUiState> noteUiState = new MutableLiveData<NoteUiState>();
+
+    private MutableLiveData<Boolean> navigatedState = new MutableLiveData<Boolean>(false);
+
     public NotesListViewModel(NotesRepositary notesRepositary){
         this.notesRepositary=notesRepositary;
     }
@@ -27,7 +33,7 @@ public class NotesListViewModel extends ViewModel {
             List<NoteUiState> uiStates = new ArrayList<>();
             for (Note note:
                  notes) {
-                uiStates.add(new NoteUiState(note.getTitle(),note.getBody()));
+                uiStates.add(new NoteUiState(note.getTitle(),note.getBody(),note.getId()));
             }
             if(notesUiState != null){
                 notesUiState.getValue().clear();
@@ -43,12 +49,37 @@ public class NotesListViewModel extends ViewModel {
         return notesUiState;
     }
 
-    public Result<Boolean> addNote(String tittle, String body){
-       return notesRepositary.insert(tittle,body);
+    public MutableLiveData<NoteUiState> getNoteUiState(){
+        return  noteUiState;
+    }
+
+    public MutableLiveData<Boolean> getNavigatedState(){
+        return this.navigatedState;
+    }
+
+    public Result<Boolean> addNote(){
+        NoteUiState uiState = this.noteUiState.getValue();
+        Result result = notesRepositary.insert(uiState.getTitle(), uiState.getBody());
+        //now the state needs to be updated so that the update will be shown
+        fetchNotes();
+        return  result;
     }
 
     public Result<Boolean> deleteNote(int id){
-        return  notesRepositary.delete(id);
+        Result result =  notesRepositary.delete(id);
+        if(result instanceof Result.Success){
+            fetchNotes();
+        }
+        return  result;
     }
+
+
+    public Result<Boolean> updateNote(){
+        NoteUiState uiState = this.noteUiState.getValue();
+        Result result = notesRepositary.update(uiState.getTitle(), uiState.getBody(), uiState.getId());
+        fetchNotes();
+        return  result;
+    }
+
 
 }
